@@ -1,0 +1,141 @@
+# Production stack — runs on a single Hetzner Cloud Ubuntu 24.04 VM.
+# Same compose file lifts and shifts unchanged to AWS ECS / Azure Container Apps / GCP Cloud Run.
+#
+# Bring up everything:
+#   docker compose -f infra/docker-compose.prod.yml --env-file .env up -d
+
+name: farm-manager
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN}
+      CADDY_EMAIL: ${CADDY_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+      - minio
+
+  web:
+    image: ghcr.io/boy2mello/farm-manager-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: https://${CADDY_DOMAIN}
+      NEXT_PUBLIC_WEBPUSH_PUBLIC_KEY: ${WebPush__PublicKey}
+    expose:
+      - "3000"
+    depends_on:
+      - api
+
+  api:
+    image: ghcr.io/boy2mello/farm-manager-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
+      ConnectionStrings__Redis: ${ConnectionStrings__Redis}
+      ConnectionStrings__RabbitMq: ${ConnectionStrings__RabbitMq}
+      ConnectionStrings__Hangfire: ${ConnectionStrings__Hangfire}
+      Jwt__Issuer: ${Jwt__Issuer}
+      Jwt__Audience: ${Jwt__Audience}
+      Jwt__SigningKey: ${Jwt__SigningKey}
+      Storage__Endpoint: http://minio:9000
+      Storage__PublicEndpoint: https://${CADDY_DOMAIN}/storage
+      Storage__AccessKey: ${MINIO_ROOT_USER}
+      Storage__SecretKey: ${MINIO_ROOT_PASSWORD}
+      Storage__Bucket: ${MINIO_BUCKET:-farm-manager}
+      WhatsApp__PhoneNumberId: ${WhatsApp__PhoneNumberId}
+      WhatsApp__AccessToken: ${WhatsApp__AccessToken}
+      WhatsApp__VerifyToken: ${WhatsApp__VerifyToken}
+      WebPush__PublicKey: ${WebPush__PublicKey}
+      WebPush__PrivateKey: ${WebPush__PrivateKey}
+      Cors__AllowedOrigins: https://${CADDY_DOMAIN}
+    expose:
+      - "5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      minio:
+        condition: service_started
+
+  workers:
+    image: ghcr.io/boy2mello/farm-manager-workers:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
+      ConnectionStrings__Redis: ${ConnectionStrings__Redis}
+      ConnectionStrings__RabbitMq: ${ConnectionStrings__RabbitMq}
+      ConnectionStrings__Hangfire: ${ConnectionStrings__Hangfire}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - /data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - /data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - /data/rabbitmq:/var/lib/rabbitmq
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - /data/minio:/data
+    expose:
+      - "9000"
+      - "9001"
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --primary: 142 71% 30%;
+    --primary-foreground: 0 0% 98%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 142 71% 30%;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 0 0% 98%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 222 47% 11%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 32% 17%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 142 71% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Mobile-first touch targets per spec §7.2 */
+  button, a[role="button"], input[type="submit"], input[type="button"] {
+    @apply min-h-touch min-w-touch;
+  }
+}
+
+@layer components {
+  .tier-badge {
+    @apply inline-flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold;
+  }
+  .tier-badge-A { @apply bg-tier-a text-white; }
+  .tier-badge-B { @apply bg-tier-b text-white; }
+  .tier-badge-C { @apply bg-tier-c text-black; }
+  .tier-badge-D { @apply bg-tier-d text-white; }
+  .tier-badge-E { @apply bg-tier-e text-white; }
+
+  .code-name-badge {
+    @apply inline-block rounded bg-black/70 px-1.5 py-0.5 font-mono text-xs text-white;
+  }
+}

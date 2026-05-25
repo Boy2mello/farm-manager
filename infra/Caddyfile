@@ -1,0 +1,55 @@
+# Caddy 2 — auto-HTTPS reverse proxy for Farm Manager.
+# Domain and email come from env: ${CADDY_DOMAIN}, ${CADDY_EMAIL}.
+
+{
+    email {$CADDY_EMAIL}
+    admin off
+    servers {
+        protocols h1 h2 h3
+    }
+}
+
+{$CADDY_DOMAIN} {
+    encode zstd gzip
+
+    # Security headers (CSP tuned for Next.js + WebPush)
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(self), geolocation=(self), microphone=(self), payment=()"
+        -Server
+    }
+
+    # API
+    handle /api/* {
+        reverse_proxy api:5000
+    }
+
+    # OpenAPI / Swagger (admin-only network can be added later)
+    handle /swagger* {
+        reverse_proxy api:5000
+    }
+
+    # Health (used by uptime probes)
+    handle /healthz {
+        reverse_proxy api:5000
+    }
+
+    # Hangfire dashboard — requires JWT/role guard inside the API
+    handle /hangfire* {
+        reverse_proxy api:5000
+    }
+
+    # Object storage public reads
+    handle /storage/* {
+        uri strip_prefix /storage
+        reverse_proxy minio:9000
+    }
+
+    # Everything else → Next.js
+    handle {
+        reverse_proxy web:3000
+    }
+}

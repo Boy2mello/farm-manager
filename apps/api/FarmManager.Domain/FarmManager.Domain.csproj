@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>FarmManager.Domain</RootNamespace>
+    <AssemblyName>FarmManager.Domain</AssemblyName>
+  </PropertyGroup>
+</Project>

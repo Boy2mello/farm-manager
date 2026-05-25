@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>FarmManager.Tests</RootNamespace>
+    <AssemblyName>FarmManager.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FarmManager.Application\FarmManager.Application.csproj" />
+    <ProjectReference Include="..\FarmManager.Infrastructure\FarmManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\FarmManager.Domain\FarmManager.Domain.csproj" />
+  </ItemGroup>
+</Project>

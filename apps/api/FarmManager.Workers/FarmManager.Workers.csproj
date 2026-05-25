@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <RootNamespace>FarmManager.Workers</RootNamespace>
+    <AssemblyName>FarmManager.Workers</AssemblyName>
+    <UserSecretsId>farm-manager-workers</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FarmManager.Application\FarmManager.Application.csproj" />
+    <ProjectReference Include="..\FarmManager.Infrastructure\FarmManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\FarmManager.Domain\FarmManager.Domain.csproj" />
+  </ItemGroup>
+</Project>
