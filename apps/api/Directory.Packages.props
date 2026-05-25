@@ -41,6 +41,10 @@
     <PackageVersion Include="Minio" Version="6.0.3" />
   </ItemGroup>
 
+  <ItemGroup Label="Notifications">
+    <PackageVersion Include="WebPush" Version="1.0.12" />
+  </ItemGroup>
+
   <ItemGroup Label="Cache + messaging (deferred but pinned)">
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
     <PackageVersion Include="MassTransit" Version="8.3.2" />

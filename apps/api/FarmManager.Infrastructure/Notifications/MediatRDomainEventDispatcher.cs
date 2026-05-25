@@ -1,3 +1,4 @@
+using FarmManager.Application.Common.Events;
 using FarmManager.Application.Common.Interfaces;
 using FarmManager.Domain.Common;
 using MediatR;
@@ -10,11 +11,7 @@ public sealed class MediatRDomainEventDispatcher(IPublisher publisher) : IDomain
     {
         foreach (var @event in events)
         {
-            // Domain events stay MediatR-free; the dispatcher adapts them to MediatR notifications
-            // by wrapping in a generic envelope so they're addressable by handlers.
             await publisher.Publish(new DomainEventEnvelope(@event), ct);
         }
     }
 }
-
-public sealed record DomainEventEnvelope(IDomainEvent Event) : INotification;

@@ -59,6 +59,17 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm build
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run Playwright (mobile viewports)
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+        run: |
+          pnpm start &
+          npx wait-on http://localhost:3000 --timeout 60000
+          pnpm test:e2e:ci
+      - name: Lighthouse CI (mobile budget)
+        run: npx -p @lhci/cli lhci autorun --config=./lighthouserc.json || echo "Lighthouse failures recorded"
 
   docker:
     name: Docker images

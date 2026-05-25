@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Home, Sprout, BarChart3, Bell, User } from "lucide-react";
+import { SyncIndicator } from "@/components/sync-indicator";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="container flex-1 py-4 pb-24 sm:pb-6">{children}</main>
+
+      <SyncIndicator />
 
       {/* Bottom tab bar — mobile-first per spec §7.2 */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur sm:hidden">

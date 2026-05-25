@@ -64,3 +64,27 @@
     @apply inline-block rounded bg-black/70 px-1.5 py-0.5 font-mono text-xs text-white;
   }
 }
+
+/* ---------- Glove mode (spec §7.2) ---------- */
+html[data-glove-mode="on"] {
+  font-size: 18px;
+}
+html[data-glove-mode="on"] button,
+html[data-glove-mode="on"] a[role="button"],
+html[data-glove-mode="on"] input,
+html[data-glove-mode="on"] select,
+html[data-glove-mode="on"] textarea {
+  min-height: 56px;
+  min-width: 56px;
+  font-size: 1.0625rem;
+  padding: 0.875rem 1rem;
+}
+
+/* ---------- Quiet-rural mode: text-first, defer images ---------- */
+html[data-quiet-rural="on"] img:not([data-critical="true"]) {
+  display: none !important;
+}
+html[data-quiet-rural="on"] video,
+html[data-quiet-rural="on"] iframe {
+  display: none !important;
+}

@@ -5,7 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Camera } from "lucide-react";
 import { api } from "@/lib/api/client";
+import { enqueueEvent } from "@/lib/sync/background-sync";
+import { BarcodeScanner } from "@/components/capture/barcode-scanner";
+import { VoiceRecorder } from "@/components/capture/voice-recorder";
+import { tryGetCoarseLocation } from "@/lib/hardware/geolocation";
 
 const schema = z.object({
   damId: z.string().uuid(),
@@ -30,6 +35,8 @@ export default function CalvingCapturePage() {
   const search = useSearchParams();
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
 
   const {
     register,
@@ -51,23 +58,63 @@ export default function CalvingCapturePage() {
   async function onSubmit(values: FormValues) {
     setError(null);
     setToast(null);
+
+    // Tag the event with the current GPS fix (best-effort).
+    const location = await tryGetCoarseLocation();
+
+    const payload = {
+      ...values,
+      sireId: values.sireId || null,
+      capturedLocation: location,
+      hasVoiceNote: voiceBlob != null,
+    };
+
+    // Offline / unreliable network: queue and let Background Sync flush it.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await enqueueEvent("/api/v1/animals/calvings", "POST", payload);
+      setToast("Saved locally. Will sync on reconnect.");
+      setTimeout(() => router.push("/animals"), 1500);
+      return;
+    }
+
     try {
       const res = await api<{ calfCodeName: string }>("/api/v1/animals/calvings", {
         method: "POST",
-        body: JSON.stringify({
-          ...values,
-          sireId: values.sireId || null,
-        }),
+        body: JSON.stringify(payload),
       });
       setToast(`Calf ${res.calfCodeName} registered.`);
       setTimeout(() => router.push("/animals"), 1500);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Capture failed");
+      // Network errors fall through to the queue so the user is never blocked in the kraal.
+      const msg = e instanceof Error ? e.message : "Capture failed";
+      if (msg.toLowerCase().includes("fetch") || msg === "Failed to fetch") {
+        await enqueueEvent("/api/v1/animals/calvings", "POST", payload);
+        setToast("Saved locally. Will sync on reconnect.");
+        setTimeout(() => router.push("/animals"), 1500);
+      } else {
+        setError(msg);
+      }
     }
+  }
+
+  // Use the form-control register to inject the scanned tag value imperatively via setValue would
+  // be the orthodox approach. To keep the demo simple, we update the input's value via the DOM ref.
+  function applyScannedTag(value: string) {
+    const input = document.querySelector<HTMLInputElement>("input[name='damId']");
+    if (input) {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+      setter?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    setScanning(false);
   }
 
   return (
     <section className="space-y-4">
+      {scanning && (
+        <BarcodeScanner onDetect={applyScannedTag} onClose={() => setScanning(false)} />
+      )}
+
       <header>
         <h1 className="text-2xl font-bold">Record calving</h1>
         <p className="text-sm text-muted-foreground">
@@ -77,7 +124,17 @@ export default function CalvingCapturePage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border bg-card p-4 shadow">
         <Field label="Dam (animal id)" error={errors.damId?.message}>
-          <input type="text" className="input" {...register("damId")} />
+          <div className="flex gap-2">
+            <input type="text" className="input flex-1" {...register("damId")} />
+            <button
+              type="button"
+              onClick={() => setScanning(true)}
+              className="flex items-center gap-1 rounded-md border px-3 py-2 text-sm"
+              aria-label="Scan ear tag"
+            >
+              <Camera className="h-4 w-4" /> Scan
+            </button>
+          </div>
         </Field>
 
         <Field label="Calving date" error={errors.calvingDate?.message}>
@@ -118,6 +175,8 @@ export default function CalvingCapturePage() {
         <Field label="Notes (optional)">
           <textarea className="input min-h-24" {...register("notes")} />
         </Field>
+
+        <VoiceRecorder onRecorded={setVoiceBlob} />
 
         {error && (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

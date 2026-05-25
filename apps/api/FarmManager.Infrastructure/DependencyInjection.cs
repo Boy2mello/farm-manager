@@ -2,6 +2,7 @@ using System.Text;
 using FarmManager.Application.Animals;
 using FarmManager.Application.Common.Interfaces;
 using FarmManager.Application.Lineage;
+using FarmManager.Application.Notifications;
 using FarmManager.Infrastructure.Identity;
 using FarmManager.Infrastructure.Notifications;
 using FarmManager.Infrastructure.Persistence;
@@ -78,6 +79,15 @@ public static class DependencyInjection
         services.AddAuthorization();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
+
+        // ---------- Notifications ----------
+        services.Configure<WebPushOptions>(configuration.GetSection("WebPush"));
+        services.Configure<WhatsAppOptions>(configuration.GetSection("WhatsApp"));
+        services.AddHttpClient<WhatsAppNotificationChannel>();
+        services.AddScoped<INotificationChannel, InAppNotificationChannel>();
+        services.AddScoped<INotificationChannel, WebPushNotificationChannel>();
+        services.AddScoped<INotificationChannel, WhatsAppNotificationChannel>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         return services;
     }

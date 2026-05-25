@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FarmManager.Application.Animals;
+using FarmManager.Application.Common.Exceptions;
 using FarmManager.Application.Common.Interfaces;
 using FarmManager.Domain.Animals;
 using FarmManager.Domain.Breeding;
@@ -78,6 +79,22 @@ public sealed class RecordCalvingHandler(
         {
             throw new InvalidOperationException(
                 $"Calving date is too close to previous calving ({prev:yyyy-MM-dd}). Minimum gap is 250 days.");
+        }
+
+        // Spec §7.3 conflict rule: two calvings same dam within 24 h → manager intervention.
+        var conflictWindowStart = request.CalvingDate.AddDays(-1);
+        var conflictWindowEnd = request.CalvingDate.AddDays(1);
+        var hasNearbyCalving = await db.CalvingEvents
+            .AsNoTracking()
+            .AnyAsync(c => c.DamId == dam.Id
+                && c.CalvingDate >= conflictWindowStart
+                && c.CalvingDate <= conflictWindowEnd, ct);
+
+        if (hasNearbyCalving)
+        {
+            throw new ConflictException(
+                "calving_too_close",
+                $"A calving was already recorded for this dam within 24 hours of {request.CalvingDate:yyyy-MM-dd}. Manager review required.");
         }
 
         // ----- 1. Assign code-name (RULE-019) -----

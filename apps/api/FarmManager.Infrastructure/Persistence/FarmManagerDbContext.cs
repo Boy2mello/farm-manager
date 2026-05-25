@@ -3,6 +3,7 @@ using FarmManager.Domain.Animals;
 using FarmManager.Domain.Breeding;
 using FarmManager.Domain.Common;
 using FarmManager.Domain.Flagging;
+using FarmManager.Domain.Notifications;
 using FarmManager.Domain.Organisations;
 using FarmManager.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -22,6 +23,8 @@ public class FarmManagerDbContext(DbContextOptions<FarmManagerDbContext> options
     public DbSet<PregnancyCheckEvent> PregnancyCheckEvents => Set<PregnancyCheckEvent>();
     public DbSet<Flag> Flags => Set<Flag>();
     public DbSet<TierAssignment> TierAssignments => Set<TierAssignment>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+    public DbSet<NotificationDelivery> NotificationDeliveries => Set<NotificationDelivery>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

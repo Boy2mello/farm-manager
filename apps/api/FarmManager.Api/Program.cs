@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using FarmManager.Api.Endpoints;
+using FarmManager.Api.Middleware;
 using FarmManager.Application;
 using FarmManager.Infrastructure;
 using FarmManager.Infrastructure.Persistence;
@@ -73,6 +74,8 @@ if (app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseMiddleware<ExceptionTranslationMiddleware>();
+app.UseMiddleware<IdempotencyMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
