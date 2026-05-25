@@ -20,6 +20,8 @@
     <PackageReference Include="Minio" />
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="WebPush" />
+    <PackageReference Include="QuestPDF" />
+    <PackageReference Include="ClosedXML" />
   </ItemGroup>
 
   <ItemGroup>

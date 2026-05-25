@@ -1,11 +1,15 @@
 using System.Text;
+using FarmManager.Application.Analytics;
+using FarmManager.Application.Analytics.Jobs;
 using FarmManager.Application.Animals;
 using FarmManager.Application.Common.Interfaces;
 using FarmManager.Application.Lineage;
 using FarmManager.Application.Notifications;
+using FarmManager.Application.Reporting;
 using FarmManager.Infrastructure.Identity;
 using FarmManager.Infrastructure.Notifications;
 using FarmManager.Infrastructure.Persistence;
+using FarmManager.Infrastructure.Reporting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +29,12 @@ public static class DependencyInjection
         var connection = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required.");
 
-        services.AddDbContext<FarmManagerDbContext>(options =>
-            options.UseNpgsql(connection, npgsql =>
-                npgsql.MigrationsHistoryTable("__ef_migrations_history", schema: "public")));
+        services.AddScoped<Audit.AuditSaveChangesInterceptor>();
+        services.AddDbContext<FarmManagerDbContext>((sp, options) =>
+            options
+                .UseNpgsql(connection, npgsql =>
+                    npgsql.MigrationsHistoryTable("__ef_migrations_history", schema: "public"))
+                .AddInterceptors(sp.GetRequiredService<Audit.AuditSaveChangesInterceptor>()));
 
         services.AddScoped<IFarmManagerDbContext>(sp => sp.GetRequiredService<FarmManagerDbContext>());
         services.AddScoped<ICodeNameGenerator, CodeNameGenerator>();
@@ -88,6 +95,15 @@ public static class DependencyInjection
         services.AddScoped<INotificationChannel, WebPushNotificationChannel>();
         services.AddScoped<INotificationChannel, WhatsAppNotificationChannel>();
         services.AddScoped<INotificationService, NotificationService>();
+
+        // ---------- Analytics ----------
+        services.AddScoped<IMetricsCalculator, MetricsCalculator>();
+        services.AddScoped<NightlyTierRecalcJob>();
+        services.AddScoped<NightlyKpiSnapshotJob>();
+        services.AddScoped<MorningBriefJob>();
+
+        // ---------- Reporting ----------
+        services.AddScoped<IReportEngine, ReportEngine>();
 
         return services;
     }

@@ -6,13 +6,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-        <div className="container flex h-14 items-center justify-between">
+        <div className="container flex h-14 items-center justify-between gap-3">
           <Link href="/" className="font-semibold">
             Farm Manager
           </Link>
-          <Link href="/profile" className="text-sm text-muted-foreground">
-            Profile
-          </Link>
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <Link href="/reports">Reports</Link>
+            <Link href="/profile">Profile</Link>
+          </div>
         </div>
       </header>
 

@@ -2,9 +2,12 @@ using System.Threading.RateLimiting;
 using FarmManager.Api.Endpoints;
 using FarmManager.Api.Middleware;
 using FarmManager.Application;
+using FarmManager.Application.Analytics.Jobs;
 using FarmManager.Infrastructure;
+using FarmManager.Infrastructure.BackgroundJobs;
 using FarmManager.Infrastructure.Persistence;
 using FarmManager.Infrastructure.Persistence.Seeding;
+using Hangfire;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -24,6 +27,8 @@ builder.Host.UseSerilog((ctx, services, cfg) => cfg
 // ---------- Layers ----------
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddFarmHangfire(builder.Configuration);
+builder.Services.AddFarmHangfireServer();
 
 // ---------- API ----------
 builder.Services.AddControllers();
@@ -63,6 +68,10 @@ using (var scope = app.Services.CreateScope())
     {
         await HerdSeeder.SeedAsync(db);
     }
+
+    // Register recurring Hangfire jobs once the schema is in place.
+    var recurring = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    HangfireScheduling.RegisterFarmJobs(recurring);
 }
 
 if (app.Environment.IsDevelopment())
@@ -82,6 +91,13 @@ app.UseRateLimiter();
 
 app.MapControllers();
 app.MapHealthEndpoints();
+
+// Hangfire dashboard — admin only. Authorisation filter is added here so the dashboard URL
+// is never publicly accessible.
+app.MapHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireAdminAuthFilter() },
+});
 
 app.Run();
 

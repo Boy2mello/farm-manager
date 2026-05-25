@@ -1,6 +1,12 @@
+using FarmManager.Domain.Analytics;
 using FarmManager.Domain.Animals;
+using FarmManager.Domain.Audit;
 using FarmManager.Domain.Breeding;
+using FarmManager.Domain.Commerce;
 using FarmManager.Domain.Flagging;
+using FarmManager.Domain.Health;
+using FarmManager.Domain.Inventory;
+using FarmManager.Domain.Notifications;
 using FarmManager.Domain.Organisations;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +22,17 @@ public interface IFarmManagerDbContext
     DbSet<PregnancyCheckEvent> PregnancyCheckEvents { get; }
     DbSet<Flag> Flags { get; }
     DbSet<TierAssignment> TierAssignments { get; }
+    DbSet<HerdKpiSnapshot> HerdKpiSnapshots { get; }
+    DbSet<PushSubscription> PushSubscriptions { get; }
+    DbSet<NotificationDelivery> NotificationDeliveries { get; }
+    DbSet<HealthEvent> HealthEvents { get; }
+    DbSet<InventoryItem> InventoryItems { get; }
+    DbSet<StockMovement> StockMovements { get; }
+    DbSet<SaleEvent> SaleEvents { get; }
+    DbSet<PurchaseEvent> PurchaseEvents { get; }
+    DbSet<DeathEvent> DeathEvents { get; }
+    DbSet<TransferEvent> TransferEvents { get; }
+    DbSet<AuditLogEntry> AuditLog { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

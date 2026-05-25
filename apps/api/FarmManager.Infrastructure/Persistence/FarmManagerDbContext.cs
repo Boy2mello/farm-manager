@@ -1,8 +1,13 @@
 using FarmManager.Application.Common.Interfaces;
+using FarmManager.Domain.Analytics;
 using FarmManager.Domain.Animals;
+using FarmManager.Domain.Audit;
 using FarmManager.Domain.Breeding;
+using FarmManager.Domain.Commerce;
 using FarmManager.Domain.Common;
 using FarmManager.Domain.Flagging;
+using FarmManager.Domain.Health;
+using FarmManager.Domain.Inventory;
 using FarmManager.Domain.Notifications;
 using FarmManager.Domain.Organisations;
 using FarmManager.Infrastructure.Identity;
@@ -25,6 +30,15 @@ public class FarmManagerDbContext(DbContextOptions<FarmManagerDbContext> options
     public DbSet<TierAssignment> TierAssignments => Set<TierAssignment>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<NotificationDelivery> NotificationDeliveries => Set<NotificationDelivery>();
+    public DbSet<HerdKpiSnapshot> HerdKpiSnapshots => Set<HerdKpiSnapshot>();
+    public DbSet<HealthEvent> HealthEvents => Set<HealthEvent>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<SaleEvent> SaleEvents => Set<SaleEvent>();
+    public DbSet<PurchaseEvent> PurchaseEvents => Set<PurchaseEvent>();
+    public DbSet<DeathEvent> DeathEvents => Set<DeathEvent>();
+    public DbSet<TransferEvent> TransferEvents => Set<TransferEvent>();
+    public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
