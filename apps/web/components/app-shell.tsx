@@ -24,7 +24,7 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
-  { href: "/", label: "Home", icon: Home },
+  { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/animals", label: "Herd", icon: Sprout },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/alerts", label: "Alerts", icon: Bell },
@@ -34,7 +34,8 @@ const NAV: NavItem[] = [
 
 function isActive(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
-  if (href === "/") return pathname === "/";
+  // Dashboard is also the root for logged-in users.
+  if (href === "/dashboard" && pathname === "/") return true;
   return pathname === href || pathname.startsWith(href + "/");
 }
 
@@ -83,9 +84,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Sprout className="h-5 w-5 text-primary" />
-            Farm Manager
+          <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Sprout className="h-4 w-4" />
+            </span>
+            <span className="hidden sm:inline">Farm Manager</span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">

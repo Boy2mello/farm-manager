@@ -4,35 +4,66 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* ---------- Surface ---------- */
+    --background: 0 0% 99%;
     --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* ---------- Brand ---------- */
     --primary: 142 71% 30%;
     --primary-foreground: 0 0% 98%;
-    --muted: 210 40% 96%;
+
+    /* ---------- Muted / accent ---------- */
+    --muted: 210 36% 96%;
     --muted-foreground: 215 16% 47%;
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
+
+    /* ---------- Semantic ---------- */
+    --success: 142 70% 35%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 28 70% 15%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
+
+    /* ---------- Borders ---------- */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 142 71% 30%;
+
+    --radius: 0.625rem;
   }
 
   .dark {
-    --background: 222 47% 11%;
+    --background: 222 47% 7%;
     --foreground: 0 0% 98%;
-    --primary: 142 71% 45%;
+    --card: 222 47% 9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 142 65% 50%;
     --primary-foreground: 222 47% 11%;
-    --muted: 217 32% 17%;
+    --muted: 217 33% 14%;
     --muted-foreground: 215 20% 65%;
-    --accent: 217 32% 17%;
+    --accent: 217 33% 14%;
     --accent-foreground: 0 0% 98%;
+    --success: 142 65% 50%;
+    --success-foreground: 222 47% 11%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 28 70% 15%;
+    --info: 199 89% 55%;
+    --info-foreground: 222 47% 11%;
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 217 32% 17%;
-    --input: 217 32% 17%;
-    --ring: 142 71% 45%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 142 65% 50%;
   }
 }
 
@@ -40,51 +71,79 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
-    -webkit-tap-highlight-color: transparent;
+  html, body {
+    height: 100%;
   }
-  /* Mobile-first touch targets per spec §7.2 */
+  body {
+    @apply bg-background text-foreground antialiased;
+    -webkit-tap-highlight-color: transparent;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
   button, a[role="button"], input[type="submit"], input[type="button"] {
-    @apply min-h-touch min-w-touch;
+    @apply min-h-touch;
+  }
+
+  h1 { @apply text-2xl font-bold tracking-tight sm:text-3xl; }
+  h2 { @apply text-xl font-semibold tracking-tight; }
+  h3 { @apply text-lg font-semibold; }
+  h4 { @apply text-base font-semibold; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
   .tier-badge {
-    @apply inline-flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold;
+    @apply inline-flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold leading-none;
   }
-  .tier-badge-A { @apply bg-tier-a text-white; }
-  .tier-badge-B { @apply bg-tier-b text-white; }
-  .tier-badge-C { @apply bg-tier-c text-black; }
-  .tier-badge-D { @apply bg-tier-d text-white; }
-  .tier-badge-E { @apply bg-tier-e text-white; }
+  .tier-badge-A { @apply bg-emerald-500 text-white; }
+  .tier-badge-B { @apply bg-lime-500 text-white; }
+  .tier-badge-C { @apply bg-amber-400 text-amber-950; }
+  .tier-badge-D { @apply bg-orange-500 text-white; }
+  .tier-badge-E { @apply bg-rose-500 text-white; }
 
   .code-name-badge {
     @apply inline-block rounded bg-black/70 px-1.5 py-0.5 font-mono text-xs text-white;
   }
-}
 
-/* ---------- Glove mode (spec §7.2) ---------- */
-html[data-glove-mode="on"] {
-  font-size: 18px;
-}
-html[data-glove-mode="on"] button,
-html[data-glove-mode="on"] a[role="button"],
-html[data-glove-mode="on"] input,
-html[data-glove-mode="on"] select,
-html[data-glove-mode="on"] textarea {
-  min-height: 56px;
-  min-width: 56px;
-  font-size: 1.0625rem;
-  padding: 0.875rem 1rem;
-}
+  html[data-glove-mode="on"] {
+    font-size: 18px;
+  }
+  html[data-glove-mode="on"] button,
+  html[data-glove-mode="on"] a[role="button"],
+  html[data-glove-mode="on"] input,
+  html[data-glove-mode="on"] select,
+  html[data-glove-mode="on"] textarea {
+    min-height: 56px;
+    min-width: 56px;
+    font-size: 1.0625rem;
+    padding: 0.875rem 1rem;
+  }
 
-/* ---------- Quiet-rural mode: text-first, defer images ---------- */
-html[data-quiet-rural="on"] img:not([data-critical="true"]) {
-  display: none !important;
-}
-html[data-quiet-rural="on"] video,
-html[data-quiet-rural="on"] iframe {
-  display: none !important;
+  html[data-quiet-rural="on"] img:not([data-critical="true"]) {
+    display: none !important;
+  }
+  html[data-quiet-rural="on"] video,
+  html[data-quiet-rural="on"] iframe {
+    display: none !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.25);
+    border-radius: 9999px;
+  }
 }

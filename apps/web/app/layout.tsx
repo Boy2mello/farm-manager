@@ -1,8 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { OfflineProvider } from "@/lib/providers/offline-provider";
 import { UserPreferencesProvider } from "@/lib/providers/preferences-provider";
+import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -35,11 +43,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background text-foreground antialiased">
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <UserPreferencesProvider>
           <QueryProvider>
-            <OfflineProvider>{children}</OfflineProvider>
+            <OfflineProvider>
+              <ToastProvider>{children}</ToastProvider>
+            </OfflineProvider>
           </QueryProvider>
         </UserPreferencesProvider>
       </body>

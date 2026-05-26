@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Sprout, Cake } from "lucide-react";
+import { Search, Sprout, Cake, Plus } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { TierBadge, StatusPill, SexChip } from "@/components/ui/badges";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 type AnimalSummary = {
   id: string;
@@ -16,42 +21,6 @@ type AnimalSummary = {
   status: number;
   performanceTier: 0 | 1 | 2 | 3 | 4 | 5;
   isBSired: boolean;
-};
-
-const TIER_LABEL = ["—", "A", "B", "C", "D", "E"];
-const TIER_CLASS = [
-  "bg-muted text-muted-foreground",
-  "tier-badge-A",
-  "tier-badge-B",
-  "tier-badge-C",
-  "tier-badge-D",
-  "tier-badge-E",
-];
-
-const STATUS_LABEL: Record<number, string> = {
-  1: "Active",
-  2: "Open",
-  3: "Exposed",
-  4: "Pregnant",
-  5: "Lactating",
-  6: "Dry",
-  7: "Sold",
-  8: "Dead",
-  9: "Missing",
-  10: "Transferred",
-};
-
-const STATUS_TONE: Record<number, string> = {
-  1: "bg-emerald-100 text-emerald-700",
-  2: "bg-sky-100 text-sky-700",
-  3: "bg-violet-100 text-violet-700",
-  4: "bg-pink-100 text-pink-700",
-  5: "bg-amber-100 text-amber-800",
-  6: "bg-slate-100 text-slate-700",
-  7: "bg-zinc-200 text-zinc-700",
-  8: "bg-red-100 text-red-700",
-  9: "bg-orange-100 text-orange-700",
-  10: "bg-indigo-100 text-indigo-700",
 };
 
 type FilterKey =
@@ -138,34 +107,32 @@ export default function AnimalsPage() {
   }, [data]);
 
   return (
-    <section className="space-y-4">
-      <header className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">Your herd</h1>
-            <p className="text-xs text-muted-foreground">
-              {data ? `${data.length} animals · your sub-herd only` : "Loading…"}
-            </p>
-          </div>
-          <Link
-            href="/animals/new"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Register
+    <section className="space-y-5 animate-fade-in">
+      <PageHeader
+        icon={<Sprout className="h-6 w-6" />}
+        title="Your herd"
+        description={
+          data ? `${data.length} animals · your sub-herd only` : "Loading your animals…"
+        }
+        actions={
+          <Link href="/animals/new">
+            <Button leading={<Plus className="h-4 w-4" />}>Register animal</Button>
           </Link>
-        </div>
+        }
+      />
 
+      <div className="space-y-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or code (e.g. Mantabole or L-2026-005)"
-            className="w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm"
+            className="w-full rounded-md border bg-card py-2.5 pl-9 pr-3 text-sm shadow-xs"
           />
         </div>
 
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
           {FILTERS.map(({ key, label }) => {
             const active = filter === key;
             return (
@@ -173,16 +140,16 @@ export default function AnimalsPage() {
                 key={key}
                 onClick={() => setFilter(key)}
                 className={cn(
-                  "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs",
+                  "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition",
                   active
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-muted-foreground hover:bg-accent",
+                    ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                    : "border-border bg-card text-muted-foreground hover:bg-accent",
                 )}
               >
                 {label}
                 <span
                   className={cn(
-                    "rounded-full px-1.5 text-[10px]",
+                    "rounded-full px-1.5 text-[10px] tabular-nums",
                     active ? "bg-primary-foreground/20" : "bg-muted",
                   )}
                 >
@@ -192,7 +159,7 @@ export default function AnimalsPage() {
             );
           })}
         </div>
-      </header>
+      </div>
 
       {isLoading && <SkeletonGrid />}
       {error && (
@@ -202,12 +169,16 @@ export default function AnimalsPage() {
         </p>
       )}
       {data && filtered.length === 0 && !isLoading && (
-        <div className="rounded-md border bg-card p-8 text-center">
-          <p className="font-medium">No animals match.</p>
-          <p className="text-sm text-muted-foreground">
-            Try a different filter or search term.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Sprout className="h-5 w-5" />}
+          title="No animals match"
+          description="Try a different filter or search term — or register a new animal."
+          action={
+            <Link href="/animals/new">
+              <Button leading={<Plus className="h-4 w-4" />} size="sm">Register animal</Button>
+            </Link>
+          }
+        />
       )}
 
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -221,29 +192,22 @@ export default function AnimalsPage() {
 
 function AnimalCard({ animal }: { animal: AnimalSummary }) {
   const gradient = useMemo(() => gradientFor(animal.codeName), [animal.codeName]);
-  const isFemale = animal.sex === 1;
 
   return (
     <li>
       <Link
         href={`/animals/${animal.id}`}
-        className="group block overflow-hidden rounded-xl border bg-card shadow-sm transition hover:shadow-md"
+        className="group block overflow-hidden rounded-xl border bg-card shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
       >
         <div className="relative h-32 w-full" style={{ background: gradient }}>
           <div
             className={cn(
               "absolute inset-x-0 top-0 h-1.5",
-              isFemale ? "bg-pink-400" : "bg-sky-500",
+              animal.sex === 1 ? "bg-pink-400" : "bg-sky-500",
             )}
           />
-          <span
-            className={cn(
-              "absolute right-2 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shadow",
-              TIER_CLASS[animal.performanceTier],
-            )}
-            title={`Performance tier ${TIER_LABEL[animal.performanceTier]}`}
-          >
-            {TIER_LABEL[animal.performanceTier]}
+          <span className="absolute right-2 top-3 shadow">
+            <TierBadge tier={animal.performanceTier} />
           </span>
           {animal.isBSired && (
             <span
@@ -266,25 +230,10 @@ function AnimalCard({ animal }: { animal: AnimalSummary }) {
             <p className="truncate font-semibold leading-tight">
               {animal.primaryName ?? "(unnamed)"}
             </p>
-            <span
-              className={cn(
-                "shrink-0 text-base font-bold",
-                isFemale ? "text-pink-500" : "text-sky-500",
-              )}
-              aria-label={isFemale ? "Female" : "Male"}
-            >
-              {isFemale ? "♀" : "♂"}
-            </span>
+            <SexChip sex={animal.sex} />
           </div>
           <div className="flex items-center justify-between gap-2 text-xs">
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 font-medium",
-                STATUS_TONE[animal.status] ?? "bg-muted text-muted-foreground",
-              )}
-            >
-              {STATUS_LABEL[animal.status] ?? "Unknown"}
-            </span>
+            <StatusPill status={animal.status} />
             <span className="inline-flex items-center gap-1 text-muted-foreground">
               <Cake className="h-3 w-3" />
               {animal.dob}
@@ -309,10 +258,10 @@ function SkeletonGrid() {
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
         <li key={i} className="overflow-hidden rounded-xl border bg-card">
-          <div className="h-32 w-full animate-pulse bg-muted" />
+          <Skeleton className="h-32 w-full" />
           <div className="space-y-2 p-3">
-            <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-1/2" />
           </div>
         </li>
       ))}
