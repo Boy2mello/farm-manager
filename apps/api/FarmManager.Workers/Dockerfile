@@ -14,6 +14,7 @@ COPY apps/api/FarmManager.Tests/FarmManager.Tests.csproj           ./apps/api/Fa
 RUN dotnet restore apps/api/FarmManager.Workers/FarmManager.Workers.csproj
 
 COPY apps/api ./apps/api
+COPY docs/Livestock_Register.xlsx ./docs/Livestock_Register.xlsx
 RUN dotnet publish apps/api/FarmManager.Workers/FarmManager.Workers.csproj -c Release -o /out --no-restore
 
 # ---------- Runtime ----------

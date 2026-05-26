@@ -15,6 +15,9 @@ COPY apps/api/FarmManager.Tests/FarmManager.Tests.csproj           ./apps/api/Fa
 RUN dotnet restore apps/api/FarmManager.Api/FarmManager.Api.csproj
 
 COPY apps/api ./apps/api
+# Ship the livestock register so first-boot can auto-seed the herd. The csproj
+# already declares this file as a CopyToPublishDirectory item.
+COPY docs/Livestock_Register.xlsx ./docs/Livestock_Register.xlsx
 RUN dotnet publish apps/api/FarmManager.Api/FarmManager.Api.csproj -c Release -o /out --no-restore
 
 # ---------- Runtime ----------

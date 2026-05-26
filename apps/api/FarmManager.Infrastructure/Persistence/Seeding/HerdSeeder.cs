@@ -1,18 +1,50 @@
-using FarmManager.Domain.Animals;
+using FarmManager.Application.Imports;
 using FarmManager.Domain.Organisations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FarmManager.Infrastructure.Persistence.Seeding;
 
 /// <summary>
-/// Seeds the real 40-head herd from <c>docs/Livestock Register.md</c>, plus the Boshomane
-/// lineage constraints in spec §12.4 / Appendix C. Idempotent — safe to run on every startup.
+/// First-boot seeding policy:
+///   1. If <c>docs/Livestock_Register.xlsx</c> exists alongside the deployment, run the
+///      <see cref="ILivestockRegisterImporter"/> against it — this is the canonical source.
+///   2. Otherwise fall back to the hand-coded 40-head fixture in <see cref="HerdData"/>.
+///
+/// Either path is idempotent: animals are matched by primary name; rerunning is a no-op.
 /// </summary>
 public static class HerdSeeder
 {
     private const string OrganisationName = "Tumi's Farm";
 
-    public static async Task SeedAsync(FarmManagerDbContext db, CancellationToken ct = default)
+    /// <summary>
+    /// Search the application's working directory for a livestock register workbook.
+    /// </summary>
+    public static string? FindRegisterWorkbook()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "docs", "Livestock_Register.xlsx"),
+            Path.Combine(Directory.GetCurrentDirectory(), "docs", "Livestock_Register.xlsx"),
+            Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "docs", "Livestock_Register.xlsx"),
+            Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "docs", "Livestock_Register.xlsx"),
+            Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "docs", "Livestock_Register.xlsx"),
+            Path.Combine("/srv/farm-manager/data", "Livestock_Register.xlsx"),
+        };
+
+        foreach (var c in candidates)
+        {
+            var resolved = Path.GetFullPath(c);
+            if (File.Exists(resolved)) return resolved;
+        }
+        return null;
+    }
+
+    public static async Task SeedAsync(
+        FarmManagerDbContext db,
+        ILivestockRegisterImporter importer,
+        ILogger logger,
+        CancellationToken ct = default)
     {
         var org = await db.Organisations.FirstOrDefaultAsync(o => o.Name == OrganisationName, ct);
         if (org is null)
@@ -22,38 +54,25 @@ public static class HerdSeeder
             await db.SaveChangesAsync(ct);
         }
 
-        if (await db.Animals.AnyAsync(a => a.OrganisationId == org.Id, ct))
+        var alreadyPopulated = await db.Animals.AnyAsync(a => a.OrganisationId == org.Id, ct);
+
+        var workbook = FindRegisterWorkbook();
+        if (workbook is not null)
         {
-            return; // Already seeded.
+            logger.LogInformation("Seeding via Livestock_Register.xlsx at {Path}", workbook);
+            var report = await importer.ImportAsync(workbook, OrganisationName, ct);
+            logger.LogInformation("Import summary:\n{Summary}", report.Summarise());
+            return;
         }
 
-        var legacy = HerdData.LegacyAnimals(org.Id);
-
-        // First pass: insert without parent links so we can resolve dam/sire ids by name.
-        foreach (var (animal, _, _) in legacy)
+        if (alreadyPopulated)
         {
-            db.Animals.Add(animal);
+            logger.LogInformation("Herd already populated and no register workbook found — skipping fallback seed.");
+            return;
         }
-        await db.SaveChangesAsync(ct);
 
-        // Second pass: resolve dam + sire by primary name and patch via raw SQL to avoid retracking.
-        var byName = await db.Animals
-            .Where(a => a.OrganisationId == org.Id)
-            .ToDictionaryAsync(a => a.PrimaryName!, a => a.Id, ct);
-
-        foreach (var (animal, damName, sireName) in legacy)
-        {
-            Guid? damId = damName is not null && byName.TryGetValue(damName, out var d) ? d : null;
-            Guid? sireId = sireName is not null && byName.TryGetValue(sireName, out var s) ? s : null;
-
-            if (damId is null && sireId is null) continue;
-
-            await db.Database.ExecuteSqlRawAsync(
-                "UPDATE animals SET dam_id = {1}, sire_id = {2}, is_b_sired = ({3}) WHERE id = {0}",
-                animal.Id,
-                damId is null ? (object)DBNull.Value : damId.Value,
-                sireId is null ? (object)DBNull.Value : sireId.Value,
-                sireName == "Boshomane");
-        }
+        // Fallback: hand-coded fixture (used in unit tests where the workbook isn't shipped).
+        logger.LogWarning("Livestock_Register.xlsx not found — using hand-coded 40-head fixture.");
+        await HandCodedFallback.SeedAsync(db, org.Id, ct);
     }
 }

@@ -3,14 +3,48 @@ using FarmManager.Api.Endpoints;
 using FarmManager.Api.Middleware;
 using FarmManager.Application;
 using FarmManager.Application.Analytics.Jobs;
+using FarmManager.Application.Imports;
 using FarmManager.Infrastructure;
 using FarmManager.Infrastructure.BackgroundJobs;
+using FarmManager.Infrastructure.Identity;
 using FarmManager.Infrastructure.Persistence;
 using FarmManager.Infrastructure.Persistence.Seeding;
 using Hangfire;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+
+// ---------- One-shot CLI mode: `dotnet run -- import-register <path>` ----------
+// Allows ops/agents to run the importer against an arbitrary workbook without booting the API.
+if (args.Length >= 1 && string.Equals(args[0], "import-register", StringComparison.OrdinalIgnoreCase))
+{
+    var cliPath = args.Length >= 2 ? args[1] : HerdSeeder.FindRegisterWorkbook();
+    if (string.IsNullOrWhiteSpace(cliPath) || !File.Exists(cliPath))
+    {
+        Console.Error.WriteLine($"Livestock register workbook not found: '{cliPath}'");
+        return 2;
+    }
+
+    var cliBuilder = Host.CreateApplicationBuilder();
+    cliBuilder.Configuration.AddJsonFile("appsettings.json", optional: false);
+    cliBuilder.Configuration.AddJsonFile($"appsettings.{cliBuilder.Environment.EnvironmentName}.json", optional: true);
+    cliBuilder.Configuration.AddEnvironmentVariables();
+
+    cliBuilder.Services.AddApplication();
+    cliBuilder.Services.AddInfrastructure(cliBuilder.Configuration);
+
+    using var cliApp = cliBuilder.Build();
+    using var cliScope = cliApp.Services.CreateScope();
+
+    var cliDb = cliScope.ServiceProvider.GetRequiredService<FarmManagerDbContext>();
+    await cliDb.Database.MigrateAsync();
+
+    var cliImporter = cliScope.ServiceProvider.GetRequiredService<ILivestockRegisterImporter>();
+    var report = await cliImporter.ImportAsync(cliPath, "Tumi's Farm");
+    Console.WriteLine(report.Summarise());
+    return report.Succeeded ? 0 : 1;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,14 +93,24 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-// ---------- Migrate + seed at startup ----------
+// ---------- Migrate, bootstrap admin, seed at startup ----------
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FarmManagerDbContext>();
     await db.Database.MigrateAsync();
+
+    var bootstrapLogger = scope.ServiceProvider
+        .GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
+        .CreateLogger("Bootstrap");
+
+    var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var roles = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+    await AdminBootstrapper.BootstrapAsync(db, users, roles, app.Configuration, bootstrapLogger);
+
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:Enabled"))
     {
-        await HerdSeeder.SeedAsync(db);
+        var importer = scope.ServiceProvider.GetRequiredService<ILivestockRegisterImporter>();
+        await HerdSeeder.SeedAsync(db, importer, bootstrapLogger);
     }
 
     // Register recurring Hangfire jobs once the schema is in place.
@@ -100,5 +144,6 @@ app.MapHangfireDashboard("/hangfire", new DashboardOptions
 });
 
 app.Run();
+return 0;
 
 public partial class Program;

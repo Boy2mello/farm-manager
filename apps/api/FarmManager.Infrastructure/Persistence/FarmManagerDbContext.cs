@@ -21,6 +21,7 @@ public class FarmManagerDbContext(DbContextOptions<FarmManagerDbContext> options
     : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options), IFarmManagerDbContext
 {
     public DbSet<Organisation> Organisations => Set<Organisation>();
+    public DbSet<Farm> Farms => Set<Farm>();
     public DbSet<Animal> Animals => Set<Animal>();
     public DbSet<CodeNameSequence> CodeNameSequences => Set<CodeNameSequence>();
     public DbSet<CalvingEvent> CalvingEvents => Set<CalvingEvent>();

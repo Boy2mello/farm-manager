@@ -25,4 +25,9 @@
     <ProjectReference Include="..\FarmManager.Infrastructure\FarmManager.Infrastructure.csproj" />
     <ProjectReference Include="..\FarmManager.Domain\FarmManager.Domain.csproj" />
   </ItemGroup>
+
+  <!-- Ship the livestock register workbook so the first boot can seed automatically. -->
+  <ItemGroup>
+    <None Include="..\..\..\docs\Livestock_Register.xlsx" Link="docs\Livestock_Register.xlsx" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

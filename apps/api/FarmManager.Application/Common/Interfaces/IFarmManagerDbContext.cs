@@ -15,6 +15,7 @@ namespace FarmManager.Application.Common.Interfaces;
 public interface IFarmManagerDbContext
 {
     DbSet<Organisation> Organisations { get; }
+    DbSet<Farm> Farms { get; }
     DbSet<Animal> Animals { get; }
     DbSet<CodeNameSequence> CodeNameSequences { get; }
     DbSet<CalvingEvent> CalvingEvents { get; }

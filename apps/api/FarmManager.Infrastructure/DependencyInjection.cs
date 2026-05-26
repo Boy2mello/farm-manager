@@ -5,8 +5,10 @@ using FarmManager.Application.Animals;
 using FarmManager.Application.Common.Interfaces;
 using FarmManager.Application.Lineage;
 using FarmManager.Application.Notifications;
+using FarmManager.Application.Imports;
 using FarmManager.Application.Reporting;
 using FarmManager.Infrastructure.Identity;
+using FarmManager.Infrastructure.Imports;
 using FarmManager.Infrastructure.Notifications;
 using FarmManager.Infrastructure.Persistence;
 using FarmManager.Infrastructure.Reporting;
@@ -104,6 +106,9 @@ public static class DependencyInjection
 
         // ---------- Reporting ----------
         services.AddScoped<IReportEngine, ReportEngine>();
+
+        // ---------- Imports ----------
+        services.AddScoped<ILivestockRegisterImporter, LivestockRegisterImporter>();
 
         return services;
     }

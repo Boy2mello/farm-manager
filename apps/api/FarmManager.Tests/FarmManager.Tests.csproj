@@ -15,11 +15,16 @@
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="ClosedXML" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FarmManager.Application\FarmManager.Application.csproj" />
     <ProjectReference Include="..\FarmManager.Infrastructure\FarmManager.Infrastructure.csproj" />
     <ProjectReference Include="..\FarmManager.Domain\FarmManager.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\docs\Livestock_Register.xlsx" Link="docs\Livestock_Register.xlsx" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -82,6 +82,23 @@ pnpm install
 pnpm dev                                # → http://localhost:3000
 ```
 
+### Bootstrap admin user
+
+The first time the API connects to an empty database, it auto-creates the bootstrap administrator:
+
+| Field | Default | Override env var |
+|---|---|---|
+| Username | `Boy2mello` | `BootstrapAdmin__UserName` |
+| Password | `Boy2mello!Farm26` | `BootstrapAdmin__Password` |
+| Email | `Boy2mello@farm-manager.local` | `BootstrapAdmin__Email` |
+| Roles | SuperAdmin + Owner | — |
+
+**Change this password on first login.** It is committed to source control so deployments are reproducible — rotate it before exposing the host to the internet. The password is logged once at startup so you can grab it from the boot logs if needed.
+
+### Importing the real livestock register
+
+`docs/Livestock_Register.xlsx` is the canonical source of herd data. On first boot the API auto-imports it via the `LivestockRegisterImporter` — see [docs/IMPORT.md](docs/IMPORT.md) for the full mapping, idempotency rules, CLI / upload paths, and verification checklist.
+
 Once both are running:
 - Web app: <http://localhost:3000>
 - API + Swagger: <http://localhost:5000/swagger>
