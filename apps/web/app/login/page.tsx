@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -22,7 +22,12 @@ type LoginResponse = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const search = useSearchParams();
+  const next = search.get("next") ?? "/animals";
+  const reason = search.get("reason");
+  const [error, setError] = useState<string | null>(
+    reason === "expired" ? "Your session expired. Sign in again." : null,
+  );
   const {
     register,
     handleSubmit,
@@ -37,7 +42,9 @@ export default function LoginPage() {
         body: JSON.stringify(values),
       });
       setAccessToken(res.accessToken);
-      router.push("/animals");
+      // Bounce back to whichever protected page the user originally requested.
+      const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/animals";
+      router.push(safeNext);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Sign-in failed";
       setError(msg);

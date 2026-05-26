@@ -3,6 +3,7 @@ import { apiBaseUrl } from "@/lib/utils";
 export type ApiError = { status: number; message: string; details?: unknown };
 
 const ACCESS_TOKEN_KEY = "fm.accessToken";
+const ME_CACHE_KEY = "fm.me";
 
 export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -11,8 +12,25 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string | null) {
   if (typeof window === "undefined") return;
-  if (token) window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
-  else window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  if (token) {
+    window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  } else {
+    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+    window.localStorage.removeItem(ME_CACHE_KEY);
+  }
+}
+
+/**
+ * Best-effort sign-out: clear the token + cached profile and bounce to /login.
+ * Used both by the Profile page's button and by the `api` helper when the
+ * server returns 401 (expired/invalid token).
+ */
+export function clearSessionAndRedirect(reason: "expired" | "manual" = "manual") {
+  setAccessToken(null);
+  if (typeof window === "undefined") return;
+  const next = encodeURIComponent(window.location.pathname + window.location.search);
+  const qs = reason === "expired" ? `?reason=expired&next=${next}` : `?next=${next}`;
+  window.location.href = `/login${qs}`;
 }
 
 export async function api<T>(
@@ -28,6 +46,13 @@ export async function api<T>(
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const res = await fetch(`${apiBaseUrl()}${path}`, { ...init, headers });
+
+  if (res.status === 401) {
+    // Token expired or missing — kick the user to login with a return path.
+    clearSessionAndRedirect("expired");
+    const err: ApiError = { status: 401, message: "Session expired" };
+    throw err;
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");

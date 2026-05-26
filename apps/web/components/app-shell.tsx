@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Home,
   Sprout,
@@ -10,9 +11,11 @@ import {
   FileText,
   User,
   PlusCircle,
+  Lock,
 } from "lucide-react";
 import { SyncIndicator } from "@/components/sync-indicator";
 import { cn } from "@/lib/utils";
+import { getAccessToken } from "@/lib/api/client";
 
 type NavItem = {
   href: string;
@@ -20,7 +23,6 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-// Six primary destinations — same list, two surfaces.
 const NAV: NavItem[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/animals", label: "Herd", icon: Sprout },
@@ -38,11 +40,47 @@ function isActive(pathname: string | null, href: string): boolean {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [authState, setAuthState] = useState<"checking" | "authed" | "unauthed">("checking");
+
+  // Auth guard: every page under (app)/ requires a token. If absent, send to /login
+  // with a `next` query so the user lands back where they were trying to go.
+  useEffect(() => {
+    const token = getAccessToken();
+    if (token) {
+      setAuthState("authed");
+      return;
+    }
+    setAuthState("unauthed");
+    const next = encodeURIComponent(pathname ?? "/");
+    router.replace(`/login?next=${next}`);
+  }, [pathname, router]);
+
+  if (authState !== "authed") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex max-w-sm flex-col items-center gap-3 px-6 text-center">
+          <Lock className="h-8 w-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            {authState === "checking"
+              ? "Checking your session…"
+              : "You need to sign in to view this herd."}
+          </p>
+          <Link
+            href={`/login?next=${encodeURIComponent(pathname ?? "/")}`}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const activeLabel = NAV.find((n) => isActive(pathname, n.href))?.label ?? "";
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Top bar — always shows the brand + current page. Hides the desktop nav row at <md. */}
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 font-semibold">
@@ -50,7 +88,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Farm Manager
           </Link>
 
-          {/* Desktop nav (md+) */}
           <nav className="hidden items-center gap-1 md:flex">
             {NAV.map((item) => {
               const active = isActive(pathname, item.href);
@@ -73,7 +110,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Mobile breadcrumb (<md): current page name + quick-capture FAB */}
           <span className="text-sm font-medium text-muted-foreground md:hidden">
             {activeLabel}
           </span>
@@ -84,7 +120,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <SyncIndicator />
 
-      {/* Floating quick-capture button on mobile — primary action always one tap away. */}
       <Link
         href="/capture/calving"
         className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden"
@@ -93,7 +128,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <PlusCircle className="h-7 w-7" />
       </Link>
 
-      {/* Bottom tab bar — mobile-first per spec §7.2; hides at md+. */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur md:hidden">
         <ul className="grid grid-cols-6">
           {NAV.map((item) => {
