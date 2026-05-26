@@ -15,6 +15,7 @@ import {
   Sprout,
   PlusCircle,
   Network,
+  Pencil,
 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { TierBadge, StatusPill, SexChip } from "@/components/ui/badges";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { AnimalEditDialog } from "@/components/animal-edit-dialog";
 
 type AnimalDetail = {
   id: string;
@@ -68,6 +70,7 @@ export default function AnimalDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
   const [tab, setTab] = useState<TabKey>("overview");
+  const [editing, setEditing] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["animal", id],
@@ -131,6 +134,13 @@ export default function AnimalDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              leading={<Pencil className="h-4 w-4" />}
+              onClick={() => setEditing(true)}
+            >
+              Edit
+            </Button>
             {data.sex === 1 && (
               <Link href={`/capture/calving?damId=${data.id}`}>
                 <Button leading={<PlusCircle className="h-4 w-4" />}>Record calving</Button>
@@ -182,6 +192,19 @@ export default function AnimalDetailPage() {
         />
       )}
       {tab === "lineage" && <LineageTab animal={data} />}
+
+      <AnimalEditDialog
+        animal={{
+          id: data.id,
+          codeName: data.codeName,
+          primaryName: data.primaryName,
+          aliases: data.aliases,
+          status: data.status,
+          sex: data.sex,
+        }}
+        open={editing}
+        onClose={() => setEditing(false)}
+      />
     </article>
   );
 }

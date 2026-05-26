@@ -5,12 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm, type UseFormRegister, type Path } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Camera, ArrowLeft, Baby, Save, Calendar, Weight, AlertTriangle } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { enqueueEvent } from "@/lib/sync/background-sync";
 import { BarcodeScanner } from "@/components/capture/barcode-scanner";
 import { VoiceRecorder } from "@/components/capture/voice-recorder";
+import { AnimalPicker } from "@/components/animal-picker";
 import { tryGetCoarseLocation } from "@/lib/hardware/geolocation";
 import { PageHeader } from "@/components/ui/page-header";
 import { Section } from "@/components/ui/section";
@@ -34,12 +36,21 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
+type AnimalLookup = { id: string; codeName: string; primaryName: string | null };
+
 export default function CalvingCapturePage() {
   const router = useRouter();
   const search = useSearchParams();
   const toast = useToast();
   const [scanning, setScanning] = useState(false);
   const [_voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+
+  // Shared cache with AnimalPicker.
+  const { data: animals } = useQuery({
+    queryKey: ["animals", "picker"],
+    queryFn: () => api<AnimalLookup[]>("/api/v1/animals"),
+    staleTime: 60_000,
+  });
 
   const {
     register,
@@ -95,9 +106,19 @@ export default function CalvingCapturePage() {
   }
 
   function applyScannedTag(value: string) {
-    setValue("damId", value, { shouldValidate: true, shouldDirty: true });
     setScanning(false);
-    toast.info("Tag scanned", value);
+    const trimmed = value.trim().toUpperCase();
+    const hit = (animals ?? []).find(
+      (a) =>
+        a.codeName.toUpperCase() === trimmed ||
+        (a.primaryName ?? "").toUpperCase() === trimmed,
+    );
+    if (hit) {
+      setValue("damId", hit.id, { shouldValidate: true, shouldDirty: true });
+      toast.success(`Scanned: ${hit.primaryName ?? hit.codeName}`, hit.codeName);
+    } else {
+      toast.warning("Tag not recognised", `'${value}' didn't match any animal in your herd.`);
+    }
   }
 
   return (
@@ -128,12 +149,19 @@ export default function CalvingCapturePage() {
           <div className="space-y-3">
             <Field label="Dam" error={errors.damId?.message} required>
               <div className="flex gap-2">
-                <input
-                  type="text"
-                  className="input flex-1"
-                  placeholder="UUID or scan ear tag"
-                  {...register("damId")}
-                />
+                <div className="flex-1">
+                  <AnimalPicker
+                    value={watch("damId") || null}
+                    onChange={(id) =>
+                      setValue("damId", id ?? "", {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    sex={1}
+                    placeholder="Pick the cow that calved…"
+                  />
+                </div>
                 <Button
                   type="button"
                   variant="outline"

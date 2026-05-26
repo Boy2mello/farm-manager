@@ -1,4 +1,6 @@
 using FarmManager.Application.Lineage;
+using FarmManager.Application.Lineage.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +9,7 @@ namespace FarmManager.Api.Controllers;
 [ApiController]
 [Route("api/v1/lineage")]
 [Authorize]
-public sealed class LineageController(IInbreedingCalculator inbreeding) : ControllerBase
+public sealed class LineageController(IInbreedingCalculator inbreeding, ISender mediator) : ControllerBase
 {
     /// <summary>
     /// Returns the inbreeding F for a hypothetical mating, plus the policy verdict per spec §12.3.
@@ -23,5 +25,15 @@ public sealed class LineageController(IInbreedingCalculator inbreeding) : Contro
             action = verdict.Action.ToString(),
             reason = verdict.Reason,
         });
+    }
+
+    /// <summary>
+    /// Returns the ancestor tree for an animal — flat list of nodes with generation index.
+    /// </summary>
+    [HttpGet("{animalId:guid}/pedigree")]
+    public async Task<IActionResult> Pedigree(Guid animalId, [FromQuery] int generations = 3, CancellationToken ct = default)
+    {
+        var tree = await mediator.Send(new GetPedigreeTreeQuery(animalId, generations), ct);
+        return Ok(tree);
     }
 }

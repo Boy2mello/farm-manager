@@ -1,4 +1,5 @@
 using FarmManager.Application.Animals.Commands.RegisterAnimal;
+using FarmManager.Application.Animals.Commands.UpdateAnimal;
 using FarmManager.Application.Animals.Queries;
 using FarmManager.Application.Calvings.Commands.RecordCalving;
 using FarmManager.Domain.Animals;
@@ -25,6 +26,23 @@ public sealed class AnimalsController(ISender mediator) : ControllerBase
     {
         var animal = await mediator.Send(new GetAnimalByIdQuery(id), ct);
         return animal is null ? NotFound() : Ok(animal);
+    }
+
+    public sealed record UpdateAnimalRequest(
+        AnimalStatus? Status,
+        string? PrimaryName,
+        IReadOnlyList<string>? Aliases,
+        DateOnly? WithdrawalUntil,
+        DateOnly? DisposalDate,
+        string? DisposalReason);
+
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAnimalRequest body, CancellationToken ct)
+    {
+        await mediator.Send(new UpdateAnimalCommand(
+            id, body.Status, body.PrimaryName, body.Aliases,
+            body.WithdrawalUntil, body.DisposalDate, body.DisposalReason), ct);
+        return NoContent();
     }
 
     public sealed record RegisterAnimalRequest(
