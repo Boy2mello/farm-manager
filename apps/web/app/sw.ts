@@ -1,16 +1,14 @@
 /// <reference lib="webworker" />
 /// <reference types="@serwist/next/typings" />
 import { defaultCache } from "@serwist/next/worker";
-import { Serwist, NetworkFirst, NetworkOnly, BackgroundSyncPlugin } from "serwist";
+import { Serwist, NetworkFirst, NetworkOnly } from "serwist";
 
 declare const self: ServiceWorkerGlobalScope;
 
 const SYNC_TAG = "farm-manager-event-queue";
 
-const bgSyncPlugin = new BackgroundSyncPlugin("farm-manager-bg-sync", {
-  maxRetentionTime: 24 * 60, // 24 h in minutes — retain queue across rural-signal outages
-});
-
+// Write requests are NOT retried at the SW layer — the Dexie-backed queue in
+// lib/sync/background-sync.ts owns retry semantics and is the single source of truth.
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -26,7 +24,6 @@ const serwist = new Serwist({
         networkTimeoutSeconds: 3,
       }),
     },
-    // Lineage + analytics queries — same pattern.
     {
       matcher: ({ url, request }) =>
         request.method === "GET" &&
@@ -36,12 +33,11 @@ const serwist = new Serwist({
         networkTimeoutSeconds: 3,
       }),
     },
-    // Writes — never cache, but enrol in Background Sync so they retry on reconnect.
     {
       matcher: ({ url, request }) =>
         url.pathname.startsWith("/api/") &&
         (request.method === "POST" || request.method === "PUT" || request.method === "DELETE"),
-      handler: new NetworkOnly({ plugins: [bgSyncPlugin] }),
+      handler: new NetworkOnly(),
     },
     ...defaultCache,
   ],

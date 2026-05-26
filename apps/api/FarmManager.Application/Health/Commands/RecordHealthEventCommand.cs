@@ -76,7 +76,7 @@ public sealed class RecordHealthEventHandler(
             notes: request.Notes,
             createdBy: currentUser.UserName);
 
-        db.Set<HealthEvent>().Add(record);
+        db.HealthEvents.Add(record);
 
         if (withdrawalUntil is { } until)
         {

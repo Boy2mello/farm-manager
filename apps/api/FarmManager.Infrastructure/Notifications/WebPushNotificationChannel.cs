@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WebPush;
+using DomainPushSubscription = FarmManager.Domain.Notifications.PushSubscription;
+using WebPushSubscription = WebPush.PushSubscription;
 
 namespace FarmManager.Infrastructure.Notifications;
 
@@ -34,7 +36,7 @@ public sealed class WebPushNotificationChannel(
             return;
         }
 
-        var subs = await db.Set<PushSubscription>()
+        var subs = await db.Set<DomainPushSubscription>()
             .Where(s => s.UserId == recipientUserId)
             .ToListAsync(ct);
 
@@ -55,12 +57,12 @@ public sealed class WebPushNotificationChannel(
         {
             try
             {
-                var endpoint = new global::WebPush.PushSubscription(s.Endpoint, s.P256dh, s.Auth);
+                var endpoint = new WebPushSubscription(s.Endpoint, s.P256dh, s.Auth);
                 await client.SendNotificationAsync(endpoint, payload, vapid, ct);
             }
             catch (WebPushException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Gone or System.Net.HttpStatusCode.NotFound)
             {
-                db.Set<PushSubscription>().Remove(s);
+                db.Set<DomainPushSubscription>().Remove(s);
             }
             catch (Exception ex)
             {

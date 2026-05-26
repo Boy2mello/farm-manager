@@ -7,7 +7,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.RateLimiting" Version="9.0.0" />
+    <!-- Microsoft.AspNetCore.RateLimiting ships in the shared framework on .NET 8+; no PackageVersion needed. -->
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0" />
   </ItemGroup>

@@ -114,7 +114,7 @@ export function VoiceRecorder({
 function pickMimeType(): string {
   const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
   for (const c of candidates) {
-    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported?.(c)) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)) {
       return c;
     }
   }

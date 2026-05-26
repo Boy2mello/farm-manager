@@ -30,9 +30,11 @@ export async function enqueueEvent(
   if ("serviceWorker" in navigator) {
     try {
       const reg = await navigator.serviceWorker.ready;
-      if ("sync" in reg) {
-        // @ts-expect-error — BackgroundSyncManager isn't in lib.dom yet on every browser.
-        await reg.sync.register(SYNC_TAG);
+      const syncManager = (reg as ServiceWorkerRegistration & {
+        sync?: { register: (tag: string) => Promise<void> };
+      }).sync;
+      if (syncManager) {
+        await syncManager.register(SYNC_TAG);
       } else {
         // Fall back to a one-shot flush when the SW lacks Background Sync (iOS today).
         void flushQueue();

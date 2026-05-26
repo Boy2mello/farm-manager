@@ -41,6 +41,7 @@ export default function CalvingCapturePage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -97,15 +98,8 @@ export default function CalvingCapturePage() {
     }
   }
 
-  // Use the form-control register to inject the scanned tag value imperatively via setValue would
-  // be the orthodox approach. To keep the demo simple, we update the input's value via the DOM ref.
   function applyScannedTag(value: string) {
-    const input = document.querySelector<HTMLInputElement>("input[name='damId']");
-    if (input) {
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-      setter?.call(input, value);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }
+    setValue("damId", value, { shouldValidate: true, shouldDirty: true });
     setScanning(false);
   }
 

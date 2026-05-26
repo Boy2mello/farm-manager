@@ -463,7 +463,7 @@ public sealed class LivestockRegisterImporter(
 
             // Persist the expected calving date by upserting a service event back-dated 283 days
             // if no service exists yet.
-            var serviceDate = due.AddDays(-Domain.Breeding.ServiceEvent.GestationDays);
+            var serviceDate = due.AddDays(-ServiceEvent.GestationDays);
             var existingService = await db.ServiceEvents
                 .AnyAsync(s => s.CowId == cow.Id && s.ServiceDate == serviceDate, ct);
             if (!existingService)

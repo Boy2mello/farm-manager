@@ -49,7 +49,7 @@ public sealed class HealthController(ISender mediator, IFarmManagerDbContext db,
         var rows = await db.Animals
             .AsNoTracking()
             .Where(a => a.OrganisationId == orgId)
-            .SelectMany(a => db.Set<HealthEvent>()
+            .SelectMany(a => db.HealthEvents
                 .Where(h => h.AnimalId == a.Id && h.NextDueDate != null && h.NextDueDate <= cutoff)
                 .OrderByDescending(h => h.EventDate)
                 .Take(1)
